@@ -1,14 +1,14 @@
 import paramiko
 
 
-class DeployTemplate():
+class DeployTemplate(object):
     def __init__(self, host, user, pwd):
         self.host = host
         self.user = user
         self.pwd = pwd
         self.ssh_client = None
 
-    def initConn(self):
+    def initSSHConn(self):
         try:
             ssh_client = paramiko.SSHClient()
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -18,29 +18,34 @@ class DeployTemplate():
             exit()
         self.ssh_client = ssh_client
 
+    def doCmd(self, cmd):
+        return self.ssh_client.exec_command(cmd)
 
+    def closeSSHConn(self):
+        self.ssh_client.close()
 
     def doBefore(self):
-        self.initConn()
+        self.initSSHConn()
 
     def doAfter(self):
-        pass
+        self.closeSSHConn()
 
     def mainLogic(self):
         pass
 
     def execute(self):
-        self.doBefore();
-        self.mainLogic();
-        self.doAfter();
+        self.doBefore()
+        self.mainLogic()
+        self.doAfter()
 
 
 class Docker(DeployTemplate):
-    def __init__(self):
-        super(Docker, self).__init__();
+    def __init__(self, host, user, pwd):
+        super(Docker, self).__init__(host, user, pwd)
 
     def mainLogic(self):
-        pass
+        stdin, stdout, stderr = self.doCmd("echo tt")
+        print stdout.readlines()
 
 
 class Chart(DeployTemplate):
@@ -60,7 +65,10 @@ class Setup(DeployTemplate):
 
 
 def main():
-    pass
+    docker = Docker('192.168.56.101', 'zcsubuntu', 'zcszcszcs')
+    docker.execute()
 
 if '__name__' == '__main__':
     main()
+
+main()
