@@ -107,24 +107,53 @@ class Docker(DeployTemplate):
             cmd = 'sudo docker push ' + self.params.getVal('images-' + img + '-tag')
             cmdList.append(cmd)
             self.runCmdList(cmdList)
+            cmdList = []
 
 
 class Chart(DeployTemplate):
-    '''负责chart包上传'''
-    def __init__(self):
-        super(Chart, self).__init__()
+    '''负责chart package上传'''
+    def __init__(self, host, user, pwd, params):
+        super(Docker, self).__init__(host, user, pwd, params)
 
     def mainLogic(self):
-        pass
-
+        '''
+        curl -k -X POST https://100.101.58.80:32800/v2/charts -H "Content-Type:multipart/form-data" -F content=@cpe-assembling-1.0.2.tgz -H "Domain:manage"
+        '''
+        #imgList = ['website', 'service', 'builder', 'assembling']
+        imgList = ['website', 'builder', 'service', 'assembling']
+        cmdList = []
+        for img in imgList:
+            cmd = 'sudo docker load -i ' + self.params.getVal('imageDir') + '/'+ self.params.getVal('images-' + img + '-fileNmae')
+            cmdList.append(cmd)
+            cmd = 'sudo docker tag ' + self.params.getVal('images-' + img + '-name') + ' ' + self.params.getVal('images-' + img + '-tag')
+            cmdList.append(cmd)
+            cmd = 'sudo docker push ' + self.params.getVal('images-' + img + '-tag')
+            cmdList.append(cmd)
+            self.runCmdList(cmdList)
+            cmdList = []
 
 class Setup(DeployTemplate):
-    '''负责模板上传堆栈安装'''
-    def __init__(self):
-        super(Setup, self).__init__()
+    '''负责模板建立，堆栈安装'''
+    def __init__(self, host, user, pwd, params):
+        super(Docker, self).__init__(host, user, pwd, params)
 
     def mainLogic(self):
-        pass
+        '''
+        tar -zcvf TOSCA-as-api-server-1.0.6.tgz blueprint.yaml
+        '''
+        #imgList = ['website', 'service', 'builder', 'assembling']
+        imgList = ['website', 'builder', 'service', 'assembling']
+        cmdList = []
+        for img in imgList:
+            cmd = 'sudo docker load -i ' + self.params.getVal('imageDir') + '/'+ self.params.getVal('images-' + img + '-fileNmae')
+            cmdList.append(cmd)
+            cmd = 'sudo docker tag ' + self.params.getVal('images-' + img + '-name') + ' ' + self.params.getVal('images-' + img + '-tag')
+            cmdList.append(cmd)
+            cmd = 'sudo docker push ' + self.params.getVal('images-' + img + '-tag')
+            cmdList.append(cmd)
+            self.runCmdList(cmdList)
+            cmdList = []
+
 
 class ParamsInterface(object):
     def getVal(self, key):
