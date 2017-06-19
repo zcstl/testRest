@@ -1,6 +1,7 @@
 # coding=utf-8
 import paramiko
 import json
+import re
 
 class DeployTemplate(object):
     def __init__(self, host, user, pwd, params):
@@ -58,6 +59,16 @@ class DeployTemplate(object):
         except BaseException, msg:
             print msg
             self.closeSSHConn()
+
+    def extractIP(self, str):
+        pattern = re.compile(
+            r"((?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d))))")
+        return pattern.search(str).group()  #为空 异常
+
+    def extractIpFromStrList(self, strList, hostName):
+        pattern = re.compile(
+            r"^ff.*((?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d))))$")
+
 
     def doBefore(self):
         self.initSSHConn()
@@ -164,7 +175,8 @@ class ParamsInterface(object):
 class Params(ParamsInterface):
     '''全局参数字典'''
     def __init__(self, jsonFile):
-        self.paramsDict =self.paraseJsonFile(jsonFile)
+        pass
+        # self.paramsDict =self.paraseJsonFile(jsonFile)
 
     def getVal(self, key):
         return self.paramsDict[key]
@@ -197,7 +209,34 @@ class Params(ParamsInterface):
 
         return dict
 
+    def autoParaseJsonFile(self, jsonFile):
+        try:
+            js = json.load(file(jsonFile))
+        except IOError:
+            print 'File is not existed!'
+            exit()
+        tdict = {}
+        path = []
+        self.dfs(tdict, js.keys(), js.values(), path)
+        return tdict
 
+    def dfs(self, destDict, keys, vals, path):
+        for i, key in enumerate(keys):
+            val = vals[i]
+            if len(path) == 0:
+                if (type(val) != dict) & (type(val) != list):
+                    destDict[key] = val
+                else:
+                    path.append(key)
+                    self.dfs(destDict, val.keys(), val.values(), path)
+            else:
+                if (type(val) != dict) & (type(val) != list):
+                    destDict['-'.join(path) + '-' + key] = val
+                else:
+                    path.append(key)
+                    self.dfs(destDict, val.keys(), val.values(), path)
+        if len(path) != 0:
+            path.pop()
 
 
     def pareseNodePath(self, js, nodeList):
@@ -207,12 +246,15 @@ class Params(ParamsInterface):
 
 def main():
     try:
-        params = Params('paramsTmp.json')
-        docker = Docker('100.101.58.105', 'root', 'Huawei@123', params)
-        docker.execute()
+        # params = Params('paramsTmp.json')
+        # docker = Docker('100.101.58.105', 'root', 'Huawei@123', params)
+        # docker.execute()
+        d = Params('test.json').autoParaseJsonFile('/Users/zhangcs/PycharmProjects/AutoDeploy/test.json')
+        for i in d:
+            print i, d[i]
     except BaseException, e:
         print e
-        docker.closeSSHConn()
+        # docker.closeSSHConn()
 
 if '__name__' == '__main__':
     main()
